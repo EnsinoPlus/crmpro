@@ -18,8 +18,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, onLogout, user 
   ];
 
   return (
-    <div className="w-64 bg-slate-900 h-screen text-white flex flex-col fixed left-0 top-0 z-50">
-      <div className="p-6 border-b border-slate-800">
+    <div className="w-64 bg-slate-900 dark:bg-black h-screen text-white flex flex-col fixed left-0 top-0 z-50 transition-colors duration-300">
+      <div className="p-6 border-b border-slate-800 dark:border-slate-900">
         <h1 className="text-2xl font-bold text-blue-400 flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm">C</div>
           CRM Pro
@@ -44,28 +44,38 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, onLogout, user 
         ))}
       </nav>
 
-      <div className="p-6 border-t border-slate-800 space-y-4">
-        {/* Card de Perfil - Agora clicável para Configurações */}
+      <div className="p-6 border-t border-slate-800 dark:border-slate-900 space-y-4">
+        <div className="flex justify-center">
+           <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700">
+             <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Atalho:</span>
+             <kbd className="text-[10px] font-black text-blue-400 tracking-tighter">⌘K</kbd>
+           </div>
+        </div>
+
         <button 
-          onClick={() => setView('settings')}
-          className="w-full flex items-center space-x-3 bg-slate-800/40 p-3 rounded-xl hover:bg-slate-800 transition-all group border border-transparent hover:border-slate-700 text-left"
+          onClick={() => setView('profile')}
+          className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all group border border-transparent text-left ${
+            currentView === 'profile' ? 'bg-blue-600/20 border-blue-600/50' : 'bg-slate-800/40 hover:bg-slate-800 hover:border-slate-700'
+          }`}
         >
-          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-            {user?.avatar || '👤'}
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg overflow-hidden shrink-0">
+            {user?.avatar && user.avatar.startsWith('http') ? (
+              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              <span>{user?.name?.charAt(0) || '👤'}</span>
+            )}
           </div>
           <div className="overflow-hidden flex-1">
-            <p className="text-sm font-bold truncate text-slate-100 group-hover:text-blue-400 transition-colors">{user?.name || 'Usuário'}</p>
-            <p className="text-[10px] text-slate-500 truncate uppercase tracking-wider font-bold">Administrador</p>
+            <p className="text-sm font-bold truncate text-slate-100">{user?.name || 'Usuário'}</p>
+            <p className="text-[10px] text-slate-500 truncate uppercase tracking-wider font-bold">VER PERFIL</p>
           </div>
-          <span className="text-slate-600 text-[10px] group-hover:text-slate-400">➡️</span>
         </button>
         
-        {/* Botão de Logout Funcional */}
         <button 
           onClick={onLogout}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-black text-slate-400 hover:text-white hover:bg-red-500/90 rounded-xl transition-all border border-slate-800 hover:border-red-500 shadow-sm uppercase tracking-widest"
         >
-          <span>🚪</span> Sair do Sistema
+          Sair do Sistema
         </button>
       </div>
     </div>

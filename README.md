@@ -1,21 +1,21 @@
-# CRM Pro - Gestão Inteligente de Clientes
+# CRM Pro - Gestão Inteligente
 
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+Este é o seu CRM com Inteligência Artificial.
 
-## Run and deploy your AI Studio app
+## 🚀 Como rodar no Windsurf
 
-This contains everything you need to run your app locally.
+1. **Terminal:** Abra o terminal integrado (`Ctrl + '`).
+2. **Instalação:** Se quiser rodar localmente com Node.js:
+   ```bash
+   npm install
+   npm run dev
+   ```
+3. **Deploy:** Para enviar as atualizações para o GitHub que você configurou:
+   ```bash
+   git add .
+   git commit -m "feat: atualizações do sistema"
+   git push origin main
+   ```
 
-View your app in AI Studio: https://ai.studio/apps/drive/1MwXOJKb7_pRHmqTvkOptfxj5O70bvwNG
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🐳 Docker (Produção)
+O projeto já conta com `Dockerfile` e `nginx.conf` para ser hospedado em qualquer servidor (Easypanel, VPS, etc).

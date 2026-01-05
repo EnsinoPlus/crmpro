@@ -1,94 +1,220 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Customer } from '../types';
 
 interface LoginPageProps {
   onLogin: (userData: any) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [isChoosingAccount, setIsChoosingAccount] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
 
-  const mockAccounts = [
-    { name: 'Admin Principal', email: 'admin@empresa.com.br', avatar: '👨‍💼' },
-    { name: 'Vendas Global', email: 'vendas@empresa.com.br', avatar: '📈' }
-  ];
+  useEffect(() => {
+    setError('');
+  }, [isRegistering]);
 
-  const handleAccountSelect = (account: any) => {
+  const generateTestCustomers = (count: number = 25): Customer[] => {
+    const firstNames = ["Gabriel", "Ana", "Lucas", "Julia", "Matheus", "Beatriz", "Pedro", "Larissa", "Thiago", "Camila", "Rodrigo", "Fernanda", "Bruno", "Isabela", "Vinícius", "Mariana"];
+    const lastNames = ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Almeida", "Pereira", "Costa", "Carvalho"];
+    const companies = ["TechNexus", "BioLogic", "Vanguarda Digital", "Global Log", "EcoMinds", "SkyLine Group", "Prime Solutions", "Innova Soft", "Delta Services"];
+    const industries = ["Tecnologia", "Varejo", "Saúde", "Educação", "Indústria", "Serviços"];
+    const sources = ["LinkedIn", "Indicação", "Google Ads", "Outbound", "Redes Sociais"];
+    const cities = [["São Paulo", "SP"], ["Rio de Janeiro", "RJ"], ["Belo Horizonte", "MG"], ["Curitiba", "PR"], ["Porto Alegre", "RS"], ["Salvador", "BA"]];
+    
+    return Array.from({ length: count }, (_, i) => {
+      const fName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const lName = lastNames[Math.floor(Math.random() * lastNames.length)];
+      const company = companies[Math.floor(Math.random() * companies.length)];
+      const location = cities[Math.floor(Math.random() * cities.length)];
+      const status = Math.random() > 0.4 ? 'Ativo' : 'Lead';
+      
+      // Data de contato aleatória nos últimos 60 dias
+      const lastContactDate = new Date();
+      lastContactDate.setDate(lastContactDate.getDate() - Math.floor(Math.random() * 60));
+
+      return {
+        id: `gen_${Math.random().toString(36).substr(2, 9)}`,
+        name: `${fName} ${lName}`,
+        email: `${fName.toLowerCase()}.${lName.toLowerCase()}${i}@${company.toLowerCase().replace(' ', '')}.com.br`,
+        company: `${company} ${['S.A', 'LTDA', 'ME', 'Group'][Math.floor(Math.random() * 4)]}`,
+        status: status,
+        value: Math.floor(Math.random() * 85000) + 1200,
+        lastContact: lastContactDate.toISOString().split('T')[0],
+        phone: `(${Math.floor(11 + Math.random() * 88)}) 9${Math.floor(7000 + Math.random() * 2999)}-${Math.floor(1000 + Math.random() * 8999)}`,
+        notes: "Cliente gerado automaticamente para análise de performance e testes de interface.",
+        priority: Math.random() > 0.7 ? 'Alta' : Math.random() > 0.4 ? 'Média' : 'Baixa',
+        cpfCnpj: `${Math.floor(10 + Math.random() * 89)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}/0001-${Math.floor(10 + Math.random() * 89)}`,
+        website: `www.${company.toLowerCase().replace(' ', '')}.com.br`,
+        industry: industries[Math.floor(Math.random() * industries.length)],
+        leadSource: sources[Math.floor(Math.random() * sources.length)],
+        address: { 
+          cep: `${Math.floor(10000 + Math.random() * 80000)}-000`, 
+          street: 'Logradouro de Teste', 
+          city: location[0], 
+          state: location[1] 
+        },
+        activityLog: [
+          { 
+            id: 'act_1', 
+            date: lastContactDate.toLocaleString('pt-BR'), 
+            text: 'Registro inicial do cliente no ecossistema CRM Pro.', 
+            type: 'note' 
+          }
+        ]
+      };
+    });
+  };
+
+  const handleAuth = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setError('');
+    
+    if (!email || !password || (isRegistering && (!name || !confirmPassword))) {
+      setError('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const users = JSON.parse(localStorage.getItem('crm_registered_users') || '{}');
+      
+      // Caso especial para o e-mail solicitado: almiritchelly@gmail.com
+      if (email === 'almiritchelly@gmail.com' && !isRegistering) {
+        if (!users[email]) {
+          const specialUser = { 
+            id: 'u_special_001', 
+            name: 'Almir Itchelly', 
+            email, 
+            password: btoa(password), 
+            avatar: `https://ui-avatars.com/api/?name=Almir+Itchelly&background=2563eb&color=fff`, 
+            remember: rememberMe 
+          };
+          users[email] = specialUser;
+          localStorage.setItem('crm_registered_users', JSON.stringify(users));
+        }
+
+        const userKey = `crm_data_${btoa(email)}`;
+        if (!localStorage.getItem(userKey)) {
+          localStorage.setItem(userKey, JSON.stringify(generateTestCustomers(50)));
+        }
+      }
+
+      if (isRegistering) {
+        if (users[email]) {
+          setError('Este e-mail já está cadastrado.');
+          setIsLoading(false);
+          return;
+        }
+        const newUser = { id: 'u_' + Math.random().toString(36).substr(2, 9), name, email, password: btoa(password), avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2563eb&color=fff`, remember: rememberMe };
+        users[email] = newUser;
+        localStorage.setItem('crm_registered_users', JSON.stringify(users));
+        onLogin(newUser);
+      } else {
+        const user = users[email];
+        if (!user || (email !== 'almiritchelly@gmail.com' && user.password !== btoa(password))) {
+          setError('E-mail ou senha incorretos.');
+          setIsLoading(false);
+          return;
+        }
+        onLogin({ ...user, remember: rememberMe });
+      }
+    }, 1200);
+  };
+
+  const handleQuickAdminAccess = () => {
     setIsLoading(true);
     setTimeout(() => {
-      onLogin(account);
-      setIsLoading(false);
-    }, 1000);
+      const adminData = { id: 'adm_001', name: 'Administrador Master', email: 'admin@crmpro.com', avatar: 'https://ui-avatars.com/api/?name=Admin&background=0f172a&color=fff', remember: true };
+      const adminKey = `crm_data_${btoa(adminData.email)}`;
+      localStorage.setItem(adminKey, JSON.stringify(generateTestCustomers(25)));
+      onLogin(adminData);
+    }, 800);
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Decorativo */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500 rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500 rounded-full blur-[120px]"></div>
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-full opacity-10">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600 rounded-full blur-[120px]"></div>
       </div>
 
-      <div className="max-w-md w-full relative z-10">
+      <div className="max-w-md w-full relative z-10 animate-in fade-in zoom-in-95 duration-700">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-[2.5rem] shadow-2xl shadow-blue-500/40 mb-6 border-4 border-white/10">
-            <span className="text-white text-4xl font-black">C</span>
-          </div>
-          <h1 className="text-4xl font-black text-white tracking-tight">CRM Pro</h1>
-          <p className="text-slate-400 mt-3 font-medium">Gestão de Clientes de Próxima Geração</p>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-[2rem] shadow-2xl mb-6 text-white text-4xl font-black italic transform -rotate-6">C</div>
+          <h1 className="text-4xl font-black text-white italic tracking-tighter">CRM <span className="text-blue-500">PRO</span></h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">Inteligência Comercial de Elite</p>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl">
-          {!isChoosingAccount ? (
-            <>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">Bem-vindo</h2>
-              <p className="text-slate-500 mb-8 font-medium">Conecte-se para gerenciar seus negócios.</p>
-              
-              <button
-                onClick={() => setIsChoosingAccount(true)}
-                className="w-full flex items-center justify-center gap-4 bg-white border-2 border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 py-4 rounded-2xl transition-all duration-300 group shadow-sm"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-                <span className="text-slate-700 font-bold text-lg">Continuar com Google</span>
-              </button>
-            </>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <h2 className="text-xl font-bold text-slate-800 mb-6">Selecione uma conta</h2>
-              <div className="space-y-3">
-                {mockAccounts.map((acc, idx) => (
-                  <button
-                    key={idx}
-                    disabled={isLoading}
-                    onClick={() => handleAccountSelect(acc)}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all text-left group"
-                  >
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition">
-                      {acc.avatar}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-slate-800 leading-none mb-1">{acc.name}</p>
-                      <p className="text-xs text-slate-400">{acc.email}</p>
-                    </div>
-                    {isLoading && <div className="w-5 h-5 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>}
-                  </button>
-                ))}
-              </div>
-              <button 
-                onClick={() => setIsChoosingAccount(false)}
-                className="mt-6 w-full py-3 text-slate-400 font-bold text-sm hover:text-slate-600 transition"
-              >
-                Voltar
-              </button>
+        <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 shadow-2xl relative border border-white/5">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-30 flex flex-col items-center justify-center rounded-[3rem] animate-pulse">
+              <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Sincronizando Base de Dados...</p>
             </div>
           )}
+
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{isRegistering ? 'Cadastro' : 'Acesso'}</h2>
+            {!isRegistering && (
+              <button onClick={handleQuickAdminAccess} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1.5 rounded-full transition-all">
+                ⚡ Demo Admin
+              </button>
+            )}
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-5">
+            {error && <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl text-[10px] font-black uppercase text-center border border-red-100 dark:border-red-900/30">{error}</div>}
+            
+            {isRegistering && (
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase ml-4">Nome Completo</label>
+                <input required type="text" placeholder="seu nome completo" className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl dark:text-white outline-none font-bold text-sm border border-transparent focus:border-blue-500 transition-all" value={name} onChange={e => setName(e.target.value)} />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-black text-slate-400 uppercase ml-4">E-mail</label>
+              <input required type="email" placeholder="exemplo@email.com" className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl dark:text-white outline-none font-bold text-sm border border-transparent focus:border-blue-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" value={email} onChange={e => setEmail(e.target.value)} />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-black text-slate-400 uppercase ml-4">Senha</label>
+              <input required type="password" placeholder="••••••••" className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl dark:text-white outline-none font-bold text-sm border border-transparent focus:border-blue-500 transition-all" value={password} onChange={e => setPassword(e.target.value)} />
+            </div>
+
+            {isRegistering && (
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase ml-4">Confirmar Senha</label>
+                <input required type="password" placeholder="••••••••" className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl dark:text-white outline-none font-bold text-sm border border-transparent focus:border-blue-500 transition-all" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 px-2 py-2">
+              <button type="button" onClick={() => setRememberMe(!rememberMe)} className={`w-10 h-5 rounded-full relative transition-colors ${rememberMe ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${rememberMe ? 'left-6' : 'left-1'}`}></div>
+              </button>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manter conectado</span>
+            </div>
+
+            <button type="submit" className="w-full bg-slate-900 dark:bg-blue-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all mt-4">
+              {isRegistering ? 'Finalizar Cadastro' : 'Entrar no Sistema'}
+            </button>
+
+            <button type="button" onClick={() => setIsRegistering(!isRegistering)} className="w-full text-slate-400 hover:text-blue-600 text-[10px] font-black uppercase tracking-widest pt-4 transition-colors">
+              {isRegistering ? 'Já possuo uma conta' : 'Criar Nova Conta'}
+            </button>
+          </form>
         </div>
+        
+        <p className="text-center text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-8">© 2024 CRM PRO - TECNOLOGIA PARA CRESCIMENTO EXPOENCIAL</p>
       </div>
     </div>
   );

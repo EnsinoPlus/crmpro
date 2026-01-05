@@ -1,39 +1,82 @@
 
+import { GoogleGenAI, Type } from "@google/genai";
 import { Customer } from "../types";
 
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 export const analyzeCustomerBase = async (customers: Customer[]) => {
-  // Simulação de análise enquanto a API do Google AI não está configurada
-  const totalValue = customers.reduce((sum, c) => sum + c.value, 0);
-  const activeCustomers = customers.filter(c => c.status === 'Ativo').length;
-  const leads = customers.filter(c => c.status === 'Lead').length;
-  
-  return `
-## 📊 Análise da Base de Clientes
+  const customerSummary = customers.map(c => ({
+    name: c.name,
+    status: c.status,
+    value: c.value,
+    company: c.company,
+    industry: c.industry,
+    priority: c.priority,
+    lastContact: c.lastContact
+  }));
 
-### Visão Geral
-- **Valor Total**: R$ ${totalValue.toLocaleString('pt-BR')}
-- **Clientes Ativos**: ${activeCustomers}
-- **Leads**: ${leads}
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `Analise estrategicamente esta base: ${JSON.stringify(customerSummary)}`,
+      config: {
+        thinkingConfig: { thinkingBudget: 4000 },
+        systemInstruction: `Você é um Consultor de Estratégia Sênior. 
+        Sua tarefa é gerar um "Dossiê de Crescimento" extremamente limpo e profissional.
+        
+        IMPORTANTE: 
+        1. Se usar tabelas, certifique-se de que a sintaxe Markdown esteja perfeita (use | e - corretamente).
+        2. Não use caracteres de preenchimento ou "pontinhos" para alinhar texto manualmente.
+        3. Use títulos claros (H1 e H2) para separar os assuntos.
+        4. O relatório deve parecer um documento oficial impresso.
+        5. Remova qualquer menção a códigos ou sintaxes técnicas no corpo do texto.
 
-### Insights Estratégicos
-- **Oportunidade**: ${leads > 0 ? 'Focar na conversão de leads para aumentar receita' : 'Buscar novos leads qualificados'}
-- **Retenção**: ${activeCustomers > 0 ? 'Manter relacionamento com clientes ativos' : 'Reativar clientes inativos'}
-- **Potencial**: Concentrar esforços nos clientes de maior valor
+        ESTRUTURA:
+        - # 📊 RELATÓRIO EXECUTIVO DE PERFORMANCE
+        - ## Panorama Financeiro (Tabela com Colunas: Segmento | Volume R$ | Status)
+        - ## Análise de Oportunidades (Lista numerada com foco em ROI)
+        - ## Radar de Retenção (Tabela com Colunas: Cliente | Último Contato | Nível de Risco)
+        - > **INSIGHT DO CONSULTOR:** Uma frase de impacto final sem traços ou pontos extras.
+        
+        Linguagem: Português Brasileiro formal e persuasivo.`,
+      }
+    });
 
-### Recomendações
-1. Implementar follow-up sistemático para leads
-2. Criar programa de fidelidade para clientes ativos
-3. Analisar padrões de compra para cross-selling
-  `;
+    return response.text;
+  } catch (error) {
+    console.error("Erro na análise da Gemini:", error);
+    throw error;
+  }
+};
+
+export const refineReportText = async (currentText: string, instruction: string) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Texto atual: "${currentText}". Instrução: ${instruction}`,
+      config: {
+        systemInstruction: `Você é um editor de textos executivos de alta performance. 
+        Sua tarefa é reescrever ou ajustar o texto fornecido seguindo estritamente a instrução do usuário.
+        Mantenha a formatação Markdown se ela existir. 
+        Retorne apenas o texto refinado, sem comentários adicionais.
+        Linguagem: Português Brasileiro formal.`,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Erro no refinamento:", error);
+    return currentText;
+  }
 };
 
 export const generateCustomerAdvice = async (customer: Customer) => {
-  // Simulação de recomendações personalizadas
-  const advice = customer.status === 'Ativo' 
-    ? `Manter contato frequente com ${customer.name}. Considerar upgrade de serviços baseado no valor atual de R$ ${customer.value.toLocaleString('pt-BR')}.`
-    : customer.status === 'Lead'
-    ? `Priorizar ${customer.name} - lead com potencial de R$ ${customer.value.toLocaleString('pt-BR')}. Agendar reunião de demonstração.`
-    : `Tentar reativar ${customer.name}. Último contato em ${customer.lastContact}. Oferecer condições especiais.`;
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Conselho estratégico para o cliente: ${JSON.stringify(customer)}`,
+    config: {
+      systemInstruction: "Você é um mentor de vendas. Dê 3 dicas práticas de negociação sem usar caracteres especiais desnecessários.",
+    }
+  });
 
-  return advice;
+  return response.text;
 };

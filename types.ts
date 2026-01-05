@@ -1,4 +1,11 @@
 
+export interface Activity {
+  id: string;
+  date: string;
+  text: string;
+  type: 'note' | 'status' | 'call' | 'email';
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -9,6 +16,20 @@ export interface Customer {
   lastContact: string;
   phone: string;
   notes: string;
+  priority: 'Baixa' | 'Média' | 'Alta';
+  activityLog?: Activity[];
+  // Novos Campos
+  cpfCnpj?: string;
+  website?: string;
+  industry?: string;
+  leadSource?: string;
+  address?: {
+    cep?: string;
+    street?: string;
+    number?: string;
+    city?: string;
+    state?: string;
+  };
 }
 
 export interface DashboardStats {
@@ -18,4 +39,4 @@ export interface DashboardStats {
   avgConversionRate: number;
 }
 
-export type ViewType = 'dashboard' | 'customers' | 'analytics' | 'settings';
+export type ViewType = 'dashboard' | 'customers' | 'analytics' | 'settings' | 'profile';
